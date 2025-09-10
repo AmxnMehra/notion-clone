@@ -22,9 +22,7 @@ function Header() {
         </h1>
       )}
 
-      {/* Breadcrumbs */}
       <Breadcumbs />
-
       <div>
         <SignedOut>
           <SignInButton />
