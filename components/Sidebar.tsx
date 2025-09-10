@@ -1,4 +1,4 @@
-"use client"
+"use client";
 
 import { MenuIcon } from "lucide-react";
 import NewDocumentButton from "./NewDocumentButton";
@@ -18,17 +18,15 @@ import { useEffect, useState } from "react";
 import { DocumentData } from "firebase-admin/firestore";
 import SidebarOptions from "./SidebarOptions";
 
-
 interface RoomDocument extends DocumentData {
-  createdAt: string,
-  role: "owner" | "editor",
-  roomId: string,
-  userId: string,
+  createdAt: string;
+  role: "owner" | "editor";
+  roomId: string;
+  userId: string;
 }
 
 function Sidebar() {
-  const { user } = useUser()
-
+  const { user } = useUser();
 
   const [groupedData, setGroupedData] = useState<{
     owner: RoomDocument[];
@@ -39,12 +37,11 @@ function Sidebar() {
   });
   const [data, loading, error] = useCollection(
     user &&
-    query(
-      collectionGroup(db, "rooms"),
-      where("userId", "==", user.emailAddresses[0].toString())
-    )
+      query(
+        collectionGroup(db, "rooms"),
+        where("userId", "==", user.emailAddresses[0].toString())
+      )
   );
-
 
   useEffect(() => {
     if (!data) return;
@@ -101,24 +98,27 @@ function Sidebar() {
             ))}
           </>
         )}
+
+        {/* shared with me */}
+        {groupedData.editor.length > 0 && (
+          <>
+            <h2 className="text-gray-500 font-semibold text-sm">
+              Shared with me
+            </h2>
+            {groupedData.editor.map((doc) => (
+              <SidebarOptions
+                key={doc.id}
+                id={doc.id}
+                href={`/doc/${doc.id}`}
+              />
+            ))}
+          </>
+        )}
+
+        {/* list... */}
       </div>
-
-      {/* shared with me */}
-      {groupedData.editor.length > 0 && (
-        <>
-          <h2 className="text-gray-500 font-semibold text-sm">
-            Shared with me
-          </h2>
-          {groupedData.editor.map((doc) => (
-            <SidebarOptions key={doc.id} id={doc.id} href={`/doc/${doc.id}`} />
-          ))}
-        </>
-      )}
-
-      {/* list... */}
-
     </>
-  )
+  );
 
   return (
     <div className="relative bg-gray-200 p-2 md:p-5">
@@ -143,4 +143,3 @@ function Sidebar() {
   );
 }
 export default Sidebar;
-
