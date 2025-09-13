@@ -9,7 +9,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-
 import {
   Select,
   SelectContent,
@@ -17,12 +16,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-
 import { Button } from "./ui/button";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
 import { BotIcon } from "lucide-react";
-import Markdown from "react-markdown";
 
 type Language =
   | "english"
@@ -53,34 +50,87 @@ function TranslateDocument({ doc }: { doc: Y.Doc }) {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedLanguage, setSelectedLanguage] = useState<string>("");
   const [summary, setSummary] = useState("");
-  const [question, setQuestion] = useState("");
   const [isPending, startTransition] = useTransition();
 
-  const handleAskQuestion = async (e: React.FormEvent) => {
+  // just vibe coded this and it actually works
+  const cleanText = (text: string): string => {
+    if (!text) return "";
+    return text
+      .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, "")
+      .replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, "")
+      .replace(/<[^>]*>/g, " ")
+      .replace(/&nbsp;/g, " ")
+      .replace(/&amp;/g, "&")
+      .replace(/&lt;/g, "<")
+      .replace(/&gt;/g, ">")
+      .replace(/&quot;/g, '"')
+      .replace(/&#39;/g, "'")
+      .replace(/\s+/g, " ")
+      .trim();
+  };
+
+  const handleTranslate = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    if (!selectedLanguage) {
+      toast.error("Please select a language");
+      return;
+    }
+
     startTransition(async () => {
-      // TODO: implement translation logic here
-      const documentData = doc.get("document-store").toJSON();
+      try {
+        setSummary("");
 
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_BASE_URL}/translateDocument`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            documentData,
-            targetLant: languages,
-          }),
+        const documentData = doc.get("document-store").toJSON();
+
+        let textContent = "";
+        if (typeof documentData === "string") {
+          textContent = documentData;
+        } else {
+          textContent = JSON.stringify(documentData);
         }
-      );
 
-      if (res.ok) {
-        const { translate_text } = await res.json();
-        setSummary(translate_text);
-        toast.success("Translated Summary successfully");
+        const cleanedText = cleanText(textContent);
+
+        if (!cleanedText || cleanedText.length < 3) {
+          toast.error("Document is empty or too short");
+          return;
+        }
+
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_BASE_URL}/translateDocument`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              documentData: cleanedText,
+              targetLang: selectedLanguage,
+              sourceLang: "english",
+            }),
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error(`Failed to translate: ${response.status}`);
+        }
+
+        const data = await response.json();
+
+        const translatedText =
+          data.translated_text || (typeof data === "string" ? data : "");
+
+        if (!translatedText) {
+          toast.error("No translation received");
+          return;
+        }
+
+        const finalText = cleanText(translatedText);
+        setSummary(finalText);
+        toast.success("Translation completed!");
+      } catch (error) {
+        toast.error("Translation failed");
       }
     });
   };
@@ -90,35 +140,34 @@ function TranslateDocument({ doc }: { doc: Y.Doc }) {
       <Button asChild variant="outline">
         <DialogTrigger>Translate</DialogTrigger>
       </Button>
-      <DialogContent>
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Translate the Document</DialogTitle>
           <DialogDescription>
-            Select a Language and AI will translate a summary of the document in
-            the selected language
+            Select a language and AI will translate a summary of the document
           </DialogDescription>
           <hr className="mt-5" />
-
-          {question && <p className="mt-5 text-gray-500">Q: {question}</p>}
         </DialogHeader>
+
         {summary && (
-          <div className="flex flex-col items-start max-h-96 overflow-scroll gap-2 p-5 bg-gray-100">
-            <div className="flex">
-              <BotIcon className="w-10 flex-shrink-0" />
-              <p className="font-bold">
-                GPT {isPending ? "is thinking..." : "Says:"}
-              </p>
+          <div className="flex flex-col gap-3 p-4 bg-green-50 border border-green-200 rounded-lg max-h-80 overflow-y-auto">
+            <div className="flex items-center gap-2">
+              <BotIcon className="w-5 h-5 text-green-600" />
+              <span className="font-semibold text-green-800">
+                Translated to{" "}
+                {selectedLanguage.charAt(0).toUpperCase() +
+                  selectedLanguage.slice(1)}
+              </span>
             </div>
-            <p>{isPending ? "Thinking..." : <Markdown>{summary}</Markdown>}</p>
+            <p className="text-green-700 leading-relaxed whitespace-pre-wrap">
+              {summary}
+            </p>
           </div>
         )}
 
-        <form className="flex gap-2" onSubmit={handleAskQuestion}>
-          <Select
-            value={selectedLanguage}
-            onValueChange={(value) => setSelectedLanguage(value)}
-          >
-            <SelectTrigger className="w-full">
+        <form className="flex gap-2" onSubmit={handleTranslate}>
+          <Select value={selectedLanguage} onValueChange={setSelectedLanguage}>
+            <SelectTrigger className="flex-1">
               <SelectValue placeholder="Select a Language" />
             </SelectTrigger>
             <SelectContent>
@@ -129,7 +178,6 @@ function TranslateDocument({ doc }: { doc: Y.Doc }) {
               ))}
             </SelectContent>
           </Select>
-
           <Button type="submit" disabled={!selectedLanguage || isPending}>
             {isPending ? "Translating..." : "Translate"}
           </Button>
