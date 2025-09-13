@@ -12,6 +12,7 @@ import "@blocknote/core/fonts/inter.css";
 import "@blocknote/shadcn/style.css";
 import stringToColor from "@/lib/stringToColor";
 import TranslateDocument from "./TranslateDocument";
+import ChatToDocument from "./ChatToDocument";
 
 // Types
 
@@ -107,15 +108,17 @@ function Editor() {
     return <div>Loading room…</div>;
   }
 
-  const style = `hover:text-white ${darkMode
-    ? "text-gray-300 bg-gray-700 hover:bg-gray-100 "
-    : "text-gray-700 bg-gray-200 hover:bg-gray-300 "
-    }`;
+  const style = `hover:text-white ${
+    darkMode
+      ? "text-gray-300 bg-gray-700 hover:bg-gray-100 "
+      : "text-gray-700 bg-gray-200 hover:bg-gray-300 "
+  }`;
 
   return (
     <div className="max-w-6xl mx-auto">
       <div className="flex items-center gap-2 justify-end mb-10">
         <TranslateDocument doc={doc} />
+        <ChatToDocument doc={doc} />
         {/* Dark mode toggle */}
         <Button className={style} onClick={() => setDarkMode(!darkMode)}>
           {darkMode ? <SunIcon /> : <MoonIcon />}
