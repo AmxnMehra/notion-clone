@@ -1,18 +1,20 @@
-import { initializeApp, getApps, App, getApp, cert } from "firebase-admin/app";
-
+import { initializeApp, getApps, App } from "firebase-admin/app";
 import { getFirestore } from "firebase-admin/firestore";
+import { credential } from "firebase-admin";
 
-const serviceKey = require("@/service_key.json");
+// const serviceKey = require("@/service_key.json");
 
 let app: App;
+
 if (getApps().length === 0) {
+  // Use environment variable instead of JSON file
+  const serviceKey = JSON.parse(process.env.FIREBASE_SERVICE_KEY || "{}");
+
   app = initializeApp({
-    credential: cert(serviceKey),
+    credential: credential.cert(serviceKey),
   });
 } else {
-  app = getApp();
+  app = getApps()[0];
 }
 
-const adminDb = getFirestore(app);
-
-export { app as adminApp, adminDb };
+export const adminDb = getFirestore(app);
