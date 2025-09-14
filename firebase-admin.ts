@@ -7,8 +7,15 @@ import { credential } from "firebase-admin";
 let app: App;
 
 if (getApps().length === 0) {
-  // Use environment variable instead of JSON file
-  const serviceKey = JSON.parse(process.env.FIREBASE_SERVICE_KEY || "{}");
+  let serviceKey;
+
+  if (process.env.FIREBASE_SERVICE_KEY) {
+    // Production: use environment variable
+    serviceKey = JSON.parse(process.env.FIREBASE_SERVICE_KEY);
+  } else {
+    // Development: use local file
+    serviceKey = require("./service_key.json");
+  }
 
   app = initializeApp({
     credential: credential.cert(serviceKey),
