@@ -11,11 +11,9 @@ import {
 import { FormEvent, useState, useTransition } from "react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
-import { usePathname } from "next/navigation";
-import { inviteUserToDocument } from "@/actions/action";
 import { toast } from "sonner";
 import * as Y from "yjs";
-import { BotIcon, MessageCircleCode } from "lucide-react";
+import { AArrowUpIcon, BotIcon, MessageCircleCode } from "lucide-react";
 import Markdown from "react-markdown";
 
 function ChatToDocument({ doc }: { doc: Y.Doc }) {
@@ -30,7 +28,41 @@ function ChatToDocument({ doc }: { doc: Y.Doc }) {
 
     setQuestion(input);
 
-    startTransition(async () => {});
+    startTransition(async () => {
+      const documentData = doc.get("document-store").toJSON();
+
+      try {
+        const res = await fetch(
+          `${process.env.NEXT_PUBLIC_BASE_URL}/chatToDocument`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              documentData,
+              question: input,
+            }),
+          }
+        );
+
+        if (res.ok) {
+          const { message } = await res.json();
+
+          setInput("");
+          setSummary(message);
+
+          toast.success("Question asked successfully");
+        } else {
+          const errText = await res.text();
+          // console.error("Server error:", res.status, errText);
+          toast.error(`Server error: ${res.status}`);
+        }
+      } catch (error) {
+        // console.error("Network error:", error);
+        toast.error("There's Been a problem reaching the server");
+      }
+    });
   };
 
   return (
@@ -66,7 +98,7 @@ function ChatToDocument({ doc }: { doc: Y.Doc }) {
 
         <form className="flex gap-2" onSubmit={handleAsqQuestion}>
           <Input
-            type="email"
+            type="input"
             placeholder="i.e what is this about"
             className="w-full"
             value={input}

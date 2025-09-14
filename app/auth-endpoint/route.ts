@@ -8,20 +8,31 @@ export async function POST(req: NextRequest) {
   const { sessionClaims } = await auth();
   const { room } = await req.json();
 
-  const session = liveblocks.prepareSession(sessionClaims?.email!, {
+  if (
+    !sessionClaims?.email ||
+    !sessionClaims?.fullName ||
+    !sessionClaims?.image
+  ) {
+    return NextResponse.json(
+      { message: "Invalid session claims" },
+      { status: 401 }
+    );
+  }
+
+  const session = liveblocks.prepareSession(sessionClaims.email, {
     userInfo: {
-      name: sessionClaims?.fullName!,
-      email: sessionClaims?.email!,
-      avatar: sessionClaims?.image!,
+      name: sessionClaims.fullName,
+      email: sessionClaims.email,
+      avatar: sessionClaims.image,
     },
   });
 
   const usersInRoom = await adminDb
     .collectionGroup("rooms")
-    .where("userId", "==", sessionClaims?.email)
+    .where("userId", "==", sessionClaims.email)
     .get();
 
-  const userInRoom = usersInRoom.docs.find((doc) => doc.id == room);
+  const userInRoom = usersInRoom.docs.find((doc) => doc.id === room);
 
   if (userInRoom?.exists) {
     session.allow(room, session.FULL_ACCESS);
