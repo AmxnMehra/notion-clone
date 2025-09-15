@@ -19,7 +19,7 @@ import {
 import { Button } from "./ui/button";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
-import { BotIcon } from "lucide-react";
+import { BotIcon, LanguagesIcon } from "lucide-react";
 
 type Language =
   | "english"
@@ -138,7 +138,10 @@ function TranslateDocument({ doc }: { doc: Y.Doc }) {
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <Button asChild variant="outline">
-        <DialogTrigger>Translate</DialogTrigger>
+        <DialogTrigger>
+          <LanguagesIcon />
+          Translate
+        </DialogTrigger>
       </Button>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>

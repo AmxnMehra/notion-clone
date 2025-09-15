@@ -13,7 +13,7 @@ import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { toast } from "sonner";
 import * as Y from "yjs";
-import { AArrowUpIcon, BotIcon, MessageCircleCode } from "lucide-react";
+import { BotIcon, MessageCircleCode } from "lucide-react";
 import Markdown from "react-markdown";
 
 function ChatToDocument({ doc }: { doc: Y.Doc }) {
@@ -87,7 +87,7 @@ function ChatToDocument({ doc }: { doc: Y.Doc }) {
         {summary && (
           <div className="flex flex-col items-start max-h-96 overflow-y-scroll gap-2 p-5 bg-gray-100">
             <div className="flex">
-              <BotIcon className="w-10 flex-shrink-0" />
+              <BotIcon className="w-10 flex-shrink-0w-5 h-5 text-green-600" />
               <p className="font-bold">
                 GPT {isPending ? "is thinking..." : "Says:"}
               </p>
