@@ -72,32 +72,17 @@ function TranslateDocument({ doc }: { doc: Y.Doc }) {
   const handleTranslate = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!selectedLanguage) {
-      toast.error("Please select a language");
-      return;
-    }
-
     startTransition(async () => {
       try {
-        setSummary("");
-
         const documentData = doc.get("document-store").toJSON();
-
-        let textContent = "";
-        if (typeof documentData === "string") {
-          textContent = documentData;
-        } else {
-          textContent = JSON.stringify(documentData);
-        }
-
-        const cleanedText = cleanText(textContent);
+        const cleanedText = cleanText(documentData);
 
         if (!cleanedText || cleanedText.length < 3) {
           toast.error("Document is empty or too short");
           return;
         }
 
-        const response = await fetch(
+        const res = await fetch(
           `${process.env.NEXT_PUBLIC_BASE_URL}/translateDocument`,
           {
             method: "POST",
@@ -112,23 +97,15 @@ function TranslateDocument({ doc }: { doc: Y.Doc }) {
           }
         );
 
-        if (!response.ok) {
-          throw new Error(`Failed to translate: ${response.status}`);
+        if (res.ok) {
+          const data = await res.json();
+          setSummary(data.translated_text);
+          toast.success("Translation completed!");
+        } else {
+          const errText = await res.text();
+          console.error("Server error", res.status, errText);
+          toast.error(`Server error:${res.status}`);
         }
-
-        const data = await response.json();
-
-        const translatedText =
-          data.translated_text || (typeof data === "string" ? data : "");
-
-        if (!translatedText) {
-          toast.error("No translation received");
-          return;
-        }
-
-        const finalText = cleanText(translatedText);
-        setSummary(finalText);
-        toast.success("Translation completed!");
       } catch (error) {
         toast.error("Translation failed");
       }
